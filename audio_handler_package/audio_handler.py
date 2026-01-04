@@ -23,6 +23,7 @@ class AudioHandler(object):
             output=False,
             stream_callback=self.callback,
             frames_per_buffer=self.chunk)
+        self.stream.start_stream()
 
     def stop(self):
         self.stream.close()
@@ -58,7 +59,3 @@ class AudioHandler(object):
             print(f"{pitch_hz:.1f} Hz → {note}")
 
         return None, pyaudio.paContinue
-
-    def mainloop(self):
-        while (self.stream.is_active()):
-            time.sleep(2.0)
