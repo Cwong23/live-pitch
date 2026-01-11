@@ -3,6 +3,7 @@ import pyaudio
 import time
 import librosa
 from dataclasses import dataclass
+import queue
 
 
 @dataclass
@@ -11,10 +12,18 @@ class AudioHandler(object):
     channels: int = 1
     rate: int = 44100
     chunk: int = 1024 * 2
-    audio: pyaudio.PyAudio = pyaudio.PyAudio()
+
     stream: pyaudio.Stream = None
+    audio: pyaudio.PyAudio = None
+    note_queue: queue.Queue = queue.Queue()
 
     def start(self):
+        if self.audio is None:
+            self.audio = pyaudio.PyAudio()
+
+        if self.stream is not None:
+            return
+
         print("Starting audio handler...")
         self.stream = self.audio.open(format=self.format,
             channels=self.channels,
@@ -26,8 +35,10 @@ class AudioHandler(object):
         self.stream.start_stream()
 
     def stop(self):
-        self.stream.close()
-        self.audio.terminate()
+        if self.stream is not None:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.stream = None
 
     def freq_to_note(self, freq):
         A4 = 440.0
@@ -57,5 +68,6 @@ class AudioHandler(object):
         if pitch_hz:
             note = self.freq_to_note(pitch_hz)
             print(f"{pitch_hz:.1f} Hz → {note}")
+            self.note_queue.put(f"{pitch_hz:.1f} Hz → {note}")
 
         return None, pyaudio.paContinue
